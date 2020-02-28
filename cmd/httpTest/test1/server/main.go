@@ -59,5 +59,5 @@ func main() {
 		Addr:    ":8809",
 		Handler: mux,
 	}
-	server.ListenAndServeTLS("./server.crt", "./server.key")
+	server.ListenAndServeTLS("./tunnelServer.crt", "./tunnelServer.key")
 }
