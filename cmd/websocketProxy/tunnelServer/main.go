@@ -29,7 +29,7 @@ func main() {
 	mux.Handle("/exec", execRest)
 
 	server := &http.Server{
-		Addr:    ":9904",
+		Addr:    ":10350",
 		Handler: mux,
 	}
 

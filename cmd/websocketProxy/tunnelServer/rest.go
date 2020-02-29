@@ -11,6 +11,7 @@ type ExecRest struct {
 }
 
 func (e ExecRest) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	host := request.Host
 	con, err := Upgrader.Upgrade(writer, request, nil)
 	if err != nil {
 		return
@@ -18,8 +19,8 @@ func (e ExecRest) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	defer con.Close()
 	remote := con.RemoteAddr().String()
 	local := con.LocalAddr().String()
-	fmt.Printf("Get a new exec connection remote %v local %v\n",
-		remote, local)
+	fmt.Printf("Get a new exec connection remote %v local %v to host %v \n",
+		remote, local, host)
 	for {
 		_, data, err := con.ReadMessage()
 		if err != nil {
