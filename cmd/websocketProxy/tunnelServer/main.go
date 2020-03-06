@@ -22,14 +22,14 @@ func main() {
 	defer cancel()
 
 	sessionManager := NewsessionManager(ctx)
-	execRest := NewExecRest(ctx)
+	execRest := NewExecRest(ctx, sessionManager)
 
 	mux := http.NewServeMux()
 	mux.Handle("/connect", sessionManager)
 	mux.Handle("/exec", execRest)
 
 	server := &http.Server{
-		Addr:    ":10350",
+		Addr:    ":10250",
 		Handler: mux,
 	}
 
@@ -42,7 +42,7 @@ func main() {
 		fmt.Println("shutdown succefully ...")
 	})
 
-	err := server.ListenAndServeTLS("./tunnelServer.crt", "./tunnelServer.key")
+	err := server.ListenAndServeTLS("./server.crt", "./server.key")
 	if err != nil {
 		log.Fatalf("start server error %v\n", err)
 	}

@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 )
 
 type ExecRest struct {
-	ctx context.Context
+	ctx     context.Context
+	session *SessionManager
 }
 
 func (e ExecRest) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -17,22 +19,35 @@ func (e ExecRest) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	defer con.Close()
-	remote := con.RemoteAddr().String()
-	local := con.LocalAddr().String()
-	fmt.Printf("Get a new exec connection remote %v local %v to host %v \n",
-		remote, local, host)
+
+	fmt.Printf("Get a new exec connection to host %v \n", host)
+	remotecon, ok := e.session.tunnels[host]
+	if !ok {
+		fmt.Printf("no valid tunnel %v...\n", host)
+		return
+	}
 	for {
-		_, data, err := con.ReadMessage()
+		t, reader, err := con.NextReader()
 		if err != nil {
-			fmt.Printf("readmessage error %v\n", err)
+			fmt.Printf("get next reader error %v\n", err)
 			return
 		}
-		fmt.Printf("receive message %v from %v to %v\n", string(data), remote, local)
+		writer, err := remotecon.NextWriter(t)
+		if err != nil {
+			fmt.Printf("get nextwriter error %v\n", err)
+			return
+		}
+
+		if _, err := io.Copy(writer, reader); err != nil {
+			fmt.Printf("io copy error %v\n", err)
+			return
+		}
 	}
 }
 
-func NewExecRest(ctx context.Context) *ExecRest {
+func NewExecRest(ctx context.Context, manager *SessionManager) *ExecRest {
 	return &ExecRest{
-		ctx: ctx,
+		ctx:     ctx,
+		session: manager,
 	}
 }

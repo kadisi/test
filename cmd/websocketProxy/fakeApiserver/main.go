@@ -17,7 +17,7 @@ import (
 var dest string
 
 func init() {
-	flag.StringVar(&dest, "dest", "localhost:10250", "dest address <ip:port>")
+	flag.StringVar(&dest, "dest", "127.0.0.1:10250", "dest address <ip:port>")
 }
 
 func main() {

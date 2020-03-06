@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"net/http"
 	"sync"
-	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type SessionManager struct {
@@ -16,12 +16,12 @@ type SessionManager struct {
 }
 
 func (s *SessionManager) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	id := request.Header.Get("ID")
 	con, err := Upgrader.Upgrade(writer, request, nil)
 	if err != nil {
 		return
 	}
-
-	s.AddTunnelCon(con)
+	s.AddTunnelCon(con, id)
 }
 
 func NewsessionManager(ctx context.Context) *SessionManager {
@@ -32,13 +32,13 @@ func NewsessionManager(ctx context.Context) *SessionManager {
 	}
 }
 
-func (s *SessionManager) AddTunnelCon(con *websocket.Conn) {
-	remote := con.RemoteAddr().String()
+func (s *SessionManager) AddTunnelCon(con *websocket.Conn, id string) {
 	s.lockTunnels.Lock()
-	s.tunnels[remote] = con
-	fmt.Printf("Get a new connect connection %v\n", remote)
-	//go handleConnection(s.ctx, con)
+	fmt.Printf("Get a new connect connection from %v\n", id)
+	s.tunnels[id] = con
 	s.lockTunnels.Unlock()
+
+	handleConnection(s.ctx, con)
 }
 
 func handleConnection(ctx context.Context, con *websocket.Conn) {
@@ -46,9 +46,7 @@ func handleConnection(ctx context.Context, con *websocket.Conn) {
 	for {
 		select {
 		case <-ctx.Done():
-			con.WriteControl(websocket.CloseMessage,
-				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "i will be closed"), time.Now().Add(time.Second))
-			fmt.Println("handleSingleConnection loop stop")
+			fmt.Println("read handleSingleConnection loop stop")
 			return
 		default:
 		}

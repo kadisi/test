@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"flag"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	url2 "net/url"
-	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -46,14 +47,18 @@ func (s *TunnelSession) startPing(ctx context.Context) {
 }
 func (s *TunnelSession) Serve() error {
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	defer func() {
+		cancel()
+		fmt.Printf("prepare to close ....\n")
+		s.wsCon.Con.Close()
+	}()
 
 	go s.startPing(ctx)
 
 	for {
 		t, data, err := s.wsCon.Con.ReadMessage()
 		if err != nil {
-			fmt.Printf("Read Message error %v\n")
+			fmt.Printf("Read Message error %v\n", err)
 			return err
 		}
 		fmt.Printf("receive message type %v data:%v\n", t, data)
@@ -78,26 +83,33 @@ func TLSClientConnect(url url2.URL, ca string) error {
 		},
 	}
 
-	con, _, err := dial.Dial(url.String(), nil)
+	header := http.Header{}
+	header.Add("ID", hostip)
+
+	con, _, err := dial.Dial(url.String(), header)
 	if err != nil {
 		fmt.Printf("dial error %v\n", err)
 		return err
 	}
-	defer con.Close()
-
 	session := NewTunnelSession(con)
 	return session.Serve()
 }
 
+var hostip string
+
+func init() {
+	flag.StringVar(&hostip, "hostip", "127.0.0.1", "set host ip ")
+}
 func main() {
+	flag.Parse()
+
 	url := url2.URL{
 		Scheme: "wss",
-		Host:   "localhost:9904",
-		Path:   "/connect",
+		Host:   "127.0.0.1:10250",
+		//Host: "localhost:10250",
+		Path: "/connect",
 	}
 
-	d, _ := os.Getwd()
-	fmt.Printf("get wd %v\n", d)
 	for range time.NewTicker(time.Second).C {
 		err := TLSClientConnect(url, "./ca.crt")
 		if err != nil {
