@@ -21,7 +21,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	sessionManager := NewsessionManager(ctx)
+	sessionManager := NewTunnelServer(ctx)
 	execRest := NewExecRest(ctx, sessionManager)
 
 	mux := http.NewServeMux()

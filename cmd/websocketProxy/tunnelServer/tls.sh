@@ -61,11 +61,12 @@ server() {
   # Generate the certificate using the csr and key along with the CA Root key
   echo ""
   echo "prepare to create server.crt ..."
-  openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 5000 -sha256
+  # if you do not need support ip sans:
+  #openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 5000 -sha256
   
   # If you want to support IP SANs, please exec:
-  #echo subjectAltName = IP.1:127.0.0.1,IP.2:192.168.10.10  > ./extfile.cnf
-  #openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 5000 -sha256 -extfile ./extfile.cnf
+  echo subjectAltName = IP.1:127.0.0.1,IP.2:172.20.11.41,IP.3:172.20.11.119  > ./extfile.cnf
+  openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 5000 -sha256 -extfile ./extfile.cnf
 
   # Verify the certificate's content
   echo ""

@@ -9,13 +9,13 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type SessionManager struct {
+type TunnelServer struct {
+	ctx         context.Context
 	lockTunnels sync.Mutex
 	tunnels     map[string]*websocket.Conn
-	ctx         context.Context
 }
 
-func (s *SessionManager) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (s *TunnelServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	id := request.Header.Get("ID")
 	con, err := Upgrader.Upgrade(writer, request, nil)
 	if err != nil {
@@ -24,21 +24,28 @@ func (s *SessionManager) ServeHTTP(writer http.ResponseWriter, request *http.Req
 	s.AddTunnelCon(con, id)
 }
 
-func NewsessionManager(ctx context.Context) *SessionManager {
-	return &SessionManager{
+func NewTunnelServer(ctx context.Context) *TunnelServer {
+	return &TunnelServer{
 		lockTunnels: sync.Mutex{},
 		tunnels:     make(map[string]*websocket.Conn, 100),
 		ctx:         ctx,
 	}
 }
 
-func (s *SessionManager) AddTunnelCon(con *websocket.Conn, id string) {
+func (s *TunnelServer) AddTunnelCon(con *websocket.Conn, id string) {
 	s.lockTunnels.Lock()
 	fmt.Printf("Get a new connect connection from %v\n", id)
 	s.tunnels[id] = con
 	s.lockTunnels.Unlock()
 
 	handleConnection(s.ctx, con)
+}
+
+func (s *TunnelServer) GetTunnelCon(id string) (*websocket.Conn, bool) {
+	s.lockTunnels.Lock()
+	defer s.lockTunnels.Unlock()
+	con, ok := s.tunnels[id]
+	return con, ok
 }
 
 func handleConnection(ctx context.Context, con *websocket.Conn) {

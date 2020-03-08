@@ -61,7 +61,7 @@ func (s *TunnelSession) Serve() error {
 			fmt.Printf("Read Message error %v\n", err)
 			return err
 		}
-		fmt.Printf("receive message type %v data:%v\n", t, data)
+		fmt.Printf("receive message type %v data:%v\n", t, string(data))
 	}
 
 	return nil
@@ -84,7 +84,7 @@ func TLSClientConnect(url url2.URL, ca string) error {
 	}
 
 	header := http.Header{}
-	header.Add("ID", hostip)
+	header.Add("ID", ID)
 
 	con, _, err := dial.Dial(url.String(), header)
 	if err != nil {
@@ -95,10 +95,10 @@ func TLSClientConnect(url url2.URL, ca string) error {
 	return session.Serve()
 }
 
-var hostip string
+var ID string
 
 func init() {
-	flag.StringVar(&hostip, "hostip", "127.0.0.1", "set host ip ")
+	flag.StringVar(&ID, "id", "127.0.0.1", "set host id ")
 }
 func main() {
 	flag.Parse()

@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	url2 "net/url"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -34,7 +36,7 @@ func main() {
 			RootCAs:            certPools,
 		},
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 
 	url := url2.URL{
@@ -43,13 +45,18 @@ func main() {
 		Path:   "/exec",
 	}
 
-	con, _, err := dialer.DialContext(ctx, url.String(), nil)
+	header := http.Header{}
+	header.Add("HOST", "127.0.0.1")
+	con, _, err := dialer.DialContext(ctx, url.String(), header)
 	if err != nil {
 		log.Fatalf("dail %v error %v", url.String(), err)
 	}
 	defer con.Close()
 
+	group := sync.WaitGroup{}
+	group.Add(1)
 	go func(ctx context.Context) {
+		defer group.Done()
 		for i := 0; ; i++ {
 			select {
 			case <-ctx.Done():
@@ -65,10 +72,5 @@ func main() {
 		}
 	}(ctx)
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		}
-	}
+	group.Wait()
 }
